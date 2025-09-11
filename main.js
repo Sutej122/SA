@@ -109,6 +109,9 @@
                 iteration += 1 / 3;
             }, 30);
         });
+
+        // THIS LINE WAS MISSING
+        mobileNavToggle.addEventListener('click', toggleMobileNav);
         
         function setupCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
