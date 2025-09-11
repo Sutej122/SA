@@ -74,7 +74,11 @@
         window.addEventListener('resize', setupCanvas);
         window.addEventListener('scroll', handleScroll, { passive: true });
         
-        // NO MOUSE LISTENERS FOR CANVAS INTERACTION
+        // ADDED: Listener for the hamburger/close icon
+        mobileNavToggle.addEventListener('click', toggleMobileNav);
+
+        // ADDED: Listener for the background overlay to close the menu
+        mobileNavOverlay.addEventListener('click', toggleMobileNav);
 
         allNavLinks.forEach(link => {
             link.addEventListener('click', e => {
@@ -109,9 +113,6 @@
                 iteration += 1 / 3;
             }, 30);
         });
-
-        // THIS LINE WAS MISSING
-        mobileNavToggle.addEventListener('click', toggleMobileNav);
         
         function setupCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
@@ -156,7 +157,6 @@
         function animateCanvas() {
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Draw passive background dots
             dots.forEach(dot => {
                 dot.x += dot.vx;
                 dot.y += dot.vy;
@@ -169,7 +169,6 @@
                 canvasCtx.fill();
             });
 
-            // Draw shooting stars
             const now = Date.now();
             if (now > nextShootingStarTimestamp && shootingStars.length < 1) {
                 createShootingStar();
