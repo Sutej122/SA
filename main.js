@@ -74,10 +74,7 @@
         window.addEventListener('resize', setupCanvas);
         window.addEventListener('scroll', handleScroll, { passive: true });
         
-        // ADDED: Listener for the hamburger/close icon
         mobileNavToggle.addEventListener('click', toggleMobileNav);
-
-        // ADDED: Listener for the background overlay to close the menu
         mobileNavOverlay.addEventListener('click', toggleMobileNav);
 
         allNavLinks.forEach(link => {
@@ -120,11 +117,19 @@
             const dotsDensity = window.innerWidth < 768 ? 20000 : 9000;
             const dotsCount = Math.floor((canvas.width * canvas.height) / dotsDensity);
             for (let i = 0; i < dotsCount; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const vx = Math.random() * 0.2 - 0.1; 
+                const vy = Math.random() * 0.2 - 0.1;
                 dots.push({ 
-                    x: Math.random() * canvas.width, 
-                    y: Math.random() * canvas.height, 
-                    vx: Math.random() * 0.2 - 0.1, 
-                    vy: Math.random() * 0.2 - 0.1,
+                    x: x, 
+                    y: y,
+                    ox: x, 
+                    oy: y, 
+                    vx: vx, 
+                    vy: vy,
+                    ovx: vx,
+                    ovy: vy, 
                     size: Math.random() * 2 + 0.5,
                     opacity: Math.random() * 0.5 + 0.2
                 });
@@ -133,20 +138,27 @@
         
         function createShootingStar() {
             const side = Math.floor(Math.random() * 2);
-            const isFastAndRare = Math.random() < 0.43;
-
             const star = {
                 x: side === 0 ? Math.random() * canvas.width : 0,
                 y: side === 0 ? 0 : Math.random() * canvas.height,
                 tailLength: 20,
                 opacity: 1,
-                isFast: isFastAndRare
+                isFast: false,
+                isHypervelocity: false 
             };
 
-            if (isFastAndRare) {
+            const rand = Math.random();
+
+            if (rand < 0.20) { // 20% chance for a hypervelocity star
+                star.isHypervelocity = true;
+                star.vx = Math.random() * 10 + 25; 
+                star.vy = Math.random() * 10 + 25;
+                star.tailLength = 30; 
+            } else if (rand < 0.6) { // 40% chance for a fast star (from 0.20 to 0.60)
+                star.isFast = true;
                 star.vx = Math.random() * 7 + 14;
                 star.vy = Math.random() * 7 + 14;
-            } else {
+            } else { // 40% chance for a regular star
                 star.vx = Math.random() * 4 + 6;
                 star.vy = Math.random() * 4 + 6;
             }
@@ -156,8 +168,37 @@
 
         function animateCanvas() {
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const REPULSION_RADIUS = 150; 
+            const REPULSION_STRENGTH = 0.03; 
+            
+            shootingStars.forEach(star => {
+                const shootingStarSpeed = Math.sqrt(star.vx * star.vx + star.vy * star.vy);
+                dots.forEach(dot => {
+                    const dx = dot.x - star.x;
+                    const dy = dot.y - star.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < REPULSION_RADIUS) {
+                        const forceDirectionX = dx / distance;
+                        const forceDirectionY = dy / distance;
+                        const forceMagnitude = (REPULSION_RADIUS - distance) / REPULSION_RADIUS;
+                        const totalRepulsion = forceMagnitude * shootingStarSpeed * REPULSION_STRENGTH;
+                        
+                        dot.vx += forceDirectionX * totalRepulsion;
+                        dot.vy += forceDirectionY * totalRepulsion;
+                    }
+                });
+            });
             
             dots.forEach(dot => {
+                const RESTORATION_STRENGTH = 0.0005; 
+                dot.vx += (dot.ox - dot.x) * RESTORATION_STRENGTH;
+                dot.vy += (dot.oy - dot.y) * RESTORATION_STRENGTH;
+                
+                dot.vx += (dot.ovx - dot.vx) * 0.05;
+                dot.vy += (dot.ovy - dot.vy) * 0.05;
+                
                 dot.x += dot.vx;
                 dot.y += dot.vy;
                 if (dot.x < 0 || dot.x > canvas.width) dot.vx *= -1;
@@ -193,28 +234,41 @@
                 
                 const gradient = canvasCtx.createLinearGradient(
                     star.x, star.y, 
-                    star.x - star.vx * star.tailLength, star.y - star.vy * star.tailLength
+                    tailStartX, tailStartY
                 );
 
-                if (star.isFast) {
+                let lineWidth, headSize;
+
+                if (star.isHypervelocity) {
+                    canvasCtx.shadowColor = 'rgba(226, 88, 214, 0.8)';
+                    gradient.addColorStop(0, `rgba(255, 0, 150, ${star.opacity})`);
+                    gradient.addColorStop(0.5, `rgba(138, 43, 226, ${star.opacity * 0.8})`);
+                    gradient.addColorStop(1, 'rgba(255, 20, 147, 0)');
+                    lineWidth = 4;
+                    headSize = 3.5;
+                } else if (star.isFast) {
                     canvasCtx.shadowColor = 'rgba(173, 216, 230, 0.8)';
                     gradient.addColorStop(0, `rgba(135, 206, 250, ${star.opacity})`);
                     gradient.addColorStop(1, 'rgba(0, 0, 139, 0)');
+                    lineWidth = 3.5;
+                    headSize = 3;
                 } else {
                     canvasCtx.shadowColor = 'rgba(255, 255, 255, 0.8)';
                     gradient.addColorStop(0, `rgba(255, 255, 255, ${star.opacity})`);
                     gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    lineWidth = 3;
+                    headSize = 2.5;
                 }
                 
                 canvasCtx.beginPath();
-                canvasCtx.moveTo(star.x - star.vx * star.tailLength, star.y - star.vy * star.tailLength);
+                canvasCtx.moveTo(tailStartX, tailStartY);
                 canvasCtx.lineTo(star.x, star.y);
                 canvasCtx.strokeStyle = gradient;
-                canvasCtx.lineWidth = star.isFast ? 3.5 : 3;
+                canvasCtx.lineWidth = lineWidth;
                 canvasCtx.stroke();
 
                 canvasCtx.beginPath();
-                canvasCtx.arc(star.x, star.y, star.isFast ? 3 : 2.5, 0, Math.PI * 2);
+                canvasCtx.arc(star.x, star.y, headSize, 0, Math.PI * 2);
                 canvasCtx.fillStyle = `rgba(255, 255, 255, ${star.opacity * 0.9})`;
                 canvasCtx.fill();
 
