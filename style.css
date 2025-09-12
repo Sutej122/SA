@@ -277,3 +277,24 @@ body.space-mode-active .space-clock-container {
     .section-text { font-size: 1rem; }
     .contact-links a { font-size: 2.5rem; }
 }
+/* Custom Scrollbar Styling */
+/* This targets the entire scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* This styles the 'track' or the background of the scrollbar */
+::-webkit-scrollbar-track {
+    background: #0a0a1a; /* This should match your site's main background */
+}
+
+/* This styles the draggable 'thumb' of the scrollbar */
+::-webkit-scrollbar-thumb {
+    background: #4a4a8a; /* A subtle color from your palette */
+    border-radius: 5px;
+}
+
+/* This makes the thumb brighter when you hover over it */
+::-webkit-scrollbar-thumb:hover {
+    background: #6a6ad4; /* Your brighter accent color */
+}
