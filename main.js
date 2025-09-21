@@ -18,7 +18,17 @@
         const spaceClockDate = document.getElementById('space-clock-date');
         const spaceClockTime = document.getElementById('space-clock-time');
         const spaceClockGreeting = document.getElementById('space-clock-greeting');
+        const spaceClockYear = document.getElementById('space-clock-year');
         
+        // --- NEW: TO-DO LIST DOM ELEMENTS ---
+        const todoToggleBtn = document.getElementById('todo-toggle-btn');
+        const todoContainer = document.getElementById('todo-container');
+        const todoForm = document.getElementById('todo-form');
+        const todoInput = document.getElementById('todo-input');
+        const todoList = document.getElementById('todo-list');
+
+        let todos = [];
+
         AOS.init({ duration: 800, once: false, mirror: true, offset: 100 });
 
         // --- CORE FUNCTIONS ---
@@ -99,9 +109,75 @@
         function updateActiveIndicator() { const activeLink = document.querySelector('.nav-links a.active'); if (activeLink && window.innerWidth > 768) { activeIndicator.style.left = `${activeLink.offsetLeft}px`; activeIndicator.style.width = `${activeLink.offsetWidth}px`; } }
         function toggleMobileNav() { const isOpen = navLinksContainer.classList.toggle('nav-open'); mobileNavOverlay.classList.toggle('active'); pageContent.classList.toggle('blurred'); mobileNavToggle.setAttribute('aria-expanded', isOpen); mobileNavToggle.classList.toggle('is-active'); if (isOpen) { anime({ targets: '.nav-links li', translateY: [-20, 0], opacity: [0, 1], delay: anime.stagger(80, { start: 200 }) }); } }
         function getGreeting() { const hour = new Date().getHours(); if (hour < 12) return 'Good morning'; if (hour < 18) return 'Good afternoon'; return 'Good evening'; }
-        function updateClock() { const now = new Date(); const hours = now.getHours().toString().padStart(2, '0'); const minutes = now.getMinutes().toString().padStart(2, '0'); const dateOptions = { weekday: 'long', month: 'long', day: 'numeric' }; spaceClockTime.textContent = `${hours}:${minutes}`; spaceClockDate.textContent = now.toLocaleDateString(undefined, dateOptions); spaceClockGreeting.textContent = getGreeting(); }
-        function enterSpaceMode() { document.body.classList.add('space-mode-active'); document.documentElement.requestFullscreen().catch(err => { console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`); }); }
+        
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const year = now.getFullYear();
+            const dateOptions = { weekday: 'long', month: 'long', day: 'numeric' };
+            spaceClockTime.textContent = `${hours}:${minutes}`;
+            spaceClockDate.textContent = now.toLocaleDateString(undefined, dateOptions);
+            spaceClockYear.textContent = year;
+            spaceClockGreeting.textContent = getGreeting();
+        }
 
+        function enterSpaceMode() { document.body.classList.add('space-mode-active'); document.documentElement.requestFullscreen().catch(err => { console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`); }); }
+        
+        // --- NEW: TO-DO LIST FUNCTIONS ---
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        function loadTodos() {
+            const storedTodos = localStorage.getItem('todos');
+            if (storedTodos) {
+                todos = JSON.parse(storedTodos);
+            }
+            renderTodos();
+        }
+
+        function renderTodos() {
+            todoList.innerHTML = '';
+            todos.forEach((todo, index) => {
+                const li = document.createElement('li');
+                li.setAttribute('data-index', index);
+                if (todo.completed) {
+                    li.classList.add('completed');
+                }
+
+                const span = document.createElement('span');
+                span.textContent = todo.text;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.classList.add('delete-btn');
+                deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+
+                li.appendChild(span);
+                li.appendChild(deleteBtn);
+                todoList.appendChild(li);
+            });
+        }
+        
+        function addTodo(text) {
+            todos.push({ text: text, completed: false });
+            saveTodos();
+            renderTodos();
+        }
+
+        function toggleTodo(index) {
+            todos[index].completed = !todos[index].completed;
+            saveTodos();
+            renderTodos();
+        }
+
+        function deleteTodo(index) {
+            todos.splice(index, 1);
+            saveTodos();
+            renderTodos();
+        }
+
+        // --- EVENT LISTENERS ---
         spaceModeBtn.addEventListener('click', enterSpaceMode);
         document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.body.classList.contains('space-mode-active')) { document.body.classList.remove('space-mode-active'); } });
         setInterval(updateClock, 1000); updateClock();
@@ -113,6 +189,33 @@
         allNavLinks.forEach(link => { link.addEventListener('click', e => { e.preventDefault(); const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; if (navLinksContainer.classList.contains('nav-open')) { toggleMobileNav(); } const targetElement = document.querySelector(link.getAttribute('href')); if (!targetElement) return; if (prefersReducedMotion) { targetElement.scrollIntoView({ behavior: 'auto', block: 'start' }); handleScroll(); } else { transitionOverlay.classList.add('active'); setTimeout(() => { targetElement.scrollIntoView({ behavior: 'auto', block: 'start' }); setTimeout(() => { transitionOverlay.classList.remove('active'); handleScroll(); }, 50); }, 400); } }); });
         tagline.addEventListener("click", event => { let iteration = 0; const interval = setInterval(() => { event.target.innerText = event.target.innerText.split("").map((letter, index) => { if (index < iteration) return event.target.dataset.value[index]; return "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)]; }).join(""); if (iteration >= event.target.dataset.value.length) clearInterval(interval); iteration += 1 / 3; }, 30); });
         
+        // --- NEW: TO-DO LIST EVENT LISTENERS ---
+        todoToggleBtn.addEventListener('click', () => {
+            todoContainer.classList.toggle('active');
+        });
+
+        todoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = todoInput.value.trim();
+            if (text) {
+                addTodo(text);
+                todoInput.value = '';
+            }
+        });
+
+        todoList.addEventListener('click', (e) => {
+            const li = e.target.closest('li');
+            if (!li) return;
+
+            const index = li.getAttribute('data-index');
+
+            if (e.target.closest('.delete-btn')) {
+                deleteTodo(index);
+            } else {
+                toggleTodo(index);
+            }
+        });
+
         function setupCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             dots = []; nebulae = [new DriftingNebula(), new DriftingNebula()];
@@ -216,9 +319,11 @@
             if (now > nextShootingStarTimestamp && shootingStars.length < 1) { createShootingStar(); nextShootingStarTimestamp = now + MIN_STAR_INTERVAL + Math.random() * (MAX_STAR_INTERVAL - MIN_STAR_INTERVAL); }
             requestAnimationFrame(animateCanvas);
         }
-
+        
+        // --- INITIALIZATION ---
         setupCanvas();
         animateCanvas();
         handleScroll();
+        loadTodos(); // Load todos when the page loads
     });
 })();

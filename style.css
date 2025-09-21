@@ -274,6 +274,9 @@ footer {
     padding: 2.5rem 9.0rem;
     text-align: center;
     color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .space-clock-date, .space-clock-greeting {
@@ -307,7 +310,138 @@ body.space-mode-active::-webkit-scrollbar {
 
 body.space-mode-active .space-clock-container {
     opacity: 1;
+    pointer-events: auto; /* Changed */
 }
+
+/* --- NEW: TO-DO LIST STYLES --- */
+.space-mode-icon-btn {
+    position: absolute;
+    bottom: 25px;
+    right: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+.space-mode-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+.todo-container {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 50px);
+    transform: translateY(-50%) scale(0.95);
+    width: 350px;
+    background: rgba(20, 20, 30, 0.7);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 1.5rem;
+    text-align: left;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.todo-container.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(-50%) scale(1);
+}
+.todo-title {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    color: #fff;
+}
+.todo-list {
+    list-style: none;
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    padding-right: 10px; /* For scrollbar */
+}
+.todo-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: background 0.3s ease, opacity 0.4s ease;
+}
+.todo-list li:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+.todo-list li span {
+    transition: text-decoration 0.4s ease, opacity 0.4s ease;
+    flex-grow: 1;
+}
+.todo-list li.completed span {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+.delete-btn {
+    background: none;
+    border: none;
+    color: var(--secondary-accent);
+    cursor: pointer;
+    font-size: 1rem;
+    margin-left: 1rem;
+    opacity: 0;
+    transition: color 0.3s ease, opacity 0.3s ease;
+}
+.todo-list li:hover .delete-btn {
+    opacity: 1;
+}
+.delete-btn:hover {
+    color: #ff6b6b;
+}
+.todo-form {
+    display: flex;
+}
+#todo-input {
+    flex-grow: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+}
+#todo-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+.todo-form button {
+    background: var(--primary-accent);
+    color: var(--bg-color);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    margin-left: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+.todo-form button:hover {
+    transform: scale(1.05);
+}
+.todo-list::-webkit-scrollbar { width: 6px; }
+.todo-list::-webkit-scrollbar-track { background: transparent; }
+.todo-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 3px; }
 
 /* --- MOBILE OPTIMIZATION --- */
 @media (max-width: 900px) {
@@ -318,7 +452,28 @@ body.space-mode-active .space-clock-container {
     main, .nav-container { padding: 0 1rem; }
     nav { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(13, 13, 13, 0.95); }
     .card::after { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(26, 26, 26, 0.9); }
-    .space-clock-container { padding: 2rem 4rem; }
+    .space-clock-container { padding: 2rem 1rem; width: 90%; }
+    
+    .todo-container {
+        position: static;
+        transform: translateY(0) scale(1);
+        width: 100%;
+        margin-top: 2rem;
+        opacity: 0; /* Hidden by default on mobile */
+        max-height: 0;
+        padding: 0 1.5rem;
+        overflow: hidden;
+        transition: opacity 0.4s ease, max-height 0.5s ease, padding 0.5s ease;
+    }
+    .todo-container.active {
+        opacity: 1;
+        max-height: 500px; /* Large enough value */
+        padding: 1.5rem;
+    }
+    .space-mode-icon-btn {
+        bottom: 15px;
+        right: 15px;
+    }
     
     .card {
         padding: 2rem 1.5rem;
@@ -348,23 +503,16 @@ body.space-mode-active .space-clock-container {
     .contact-links a { font-size: 2.5rem; }
 }
 /* Custom Scrollbar Styling */
-/* This targets the entire scrollbar */
 ::-webkit-scrollbar {
     width: 10px;
 }
-
-/* This styles the 'track' or the background of the scrollbar */
 ::-webkit-scrollbar-track {
-    background: #0a0a1a; /* This should match your site's main background */
+    background: #0a0a1a;
 }
-
-/* This styles the draggable 'thumb' of the scrollbar */
 ::-webkit-scrollbar-thumb {
-    background: #4a4a8a; /* A subtle color from your palette */
+    background: #4a4a8a;
     border-radius: 5px;
 }
-
-/* This makes the thumb brighter when you hover over it */
 ::-webkit-scrollbar-thumb:hover {
-    background: #6a6ad4; /* Your brighter accent color */
+    background: #6a6ad4;
 }
