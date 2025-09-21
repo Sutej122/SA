@@ -516,3 +516,10 @@ body.space-mode-active .space-clock-container {
 ::-webkit-scrollbar-thumb:hover {
     background: #6a6ad4;
 }
+/* --- Hide Space Mode on Smaller Screens --- */
+@media (max-width: 1478px) {
+    #space-mode-btn,
+    #space-mode-container {
+        display: none !important;
+    }
+}
